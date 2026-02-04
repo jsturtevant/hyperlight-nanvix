@@ -17,6 +17,10 @@ struct Cli {
     #[arg(long)]
     verbose: bool,
 
+    /// Path to local nanvix build directory
+    #[arg(long, value_name = "PATH")]
+    nanvix_registry: Option<String>,
+
     #[command(subcommand)]
     command: Option<Commands>,
 
@@ -149,9 +153,14 @@ async fn main() -> Result<()> {
     }
 
     // Create runtime configuration
-    let config = RuntimeConfig::new()
+    let mut config = RuntimeConfig::new()
         .with_log_directory("/tmp/hyperlight-nanvix")
         .with_tmp_directory("/tmp/hyperlight-nanvix");
+
+    // Apply nanvix-registry if provided
+    if let Some(registry_path) = cli.nanvix_registry {
+        config = config.with_nanvix_registry(registry_path);
+    }
 
     // Create Sandbox instance
     let mut sandbox = Sandbox::new(config)?;

@@ -90,8 +90,7 @@ checksum = "a23eb6b1614318a8071c9b2521f36b424b2c83db5eb3a0fead4a6c0809af6e61"
 
 [[package]]
 name = "arch"
-version = "0.11.112"
-source = "git+https://github.com/nanvix/nanvix?rev=7752e9f2deb4a5606f9885e4c130eec4ea583de1#7752e9f2deb4a5606f9885e4c130eec4ea583de1"
+version = "0.11.74"
 dependencies = [
  "cfg-if",
  "config",
@@ -177,15 +176,16 @@ checksum = "812e12b5285cc515a9c72a5c1d3b6d46a19dac5acfef5265968c166106e31dd3"
 
 [[package]]
 name = "blake3"
-version = "1.8.2"
+version = "1.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3888aaa89e4b2a40fca9848e400f6a658a5a3978de7be858e209cafa8be9a4a0"
+checksum = "2468ef7d57b3fb7e16b576e8377cdbde2320c60e1491e961d11da40fc4f02a2d"
 dependencies = [
  "arrayref",
  "arrayvec",
  "cc",
  "cfg-if",
  "constant_time_eq",
+ "cpufeatures",
 ]
 
 [[package]]
@@ -227,9 +227,9 @@ checksum = "1e748733b7cbc798e1434b6ac524f0c1ff2ab456fe201501e6497c8417a4fc33"
 
 [[package]]
 name = "cc"
-version = "1.2.44"
+version = "1.2.55"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "37521ac7aabe3d13122dc382493e20c9416f299d2ccd5b3a5340a2570cdeb0f3"
+checksum = "47b26a0954ae34af09b50f0de26458fa95369a0d478d8236d3f93082b219bd29"
 dependencies = [
  "find-msvc-tools",
  "jobserver",
@@ -262,7 +262,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "145052bdd345b87320e369255277e3fb5152762ad123a901ef5c262dd38fe8d2"
 dependencies = [
  "iana-time-zone",
+ "js-sys",
  "num-traits",
+ "wasm-bindgen",
  "windows-link 0.2.1",
 ]
 
@@ -333,22 +335,20 @@ dependencies = [
 
 [[package]]
 name = "config"
-version = "0.11.112"
-source = "git+https://github.com/nanvix/nanvix?rev=7752e9f2deb4a5606f9885e4c130eec4ea583de1#7752e9f2deb4a5606f9885e4c130eec4ea583de1"
+version = "0.11.74"
 dependencies = [
  "cfg-if",
 ]
 
 [[package]]
 name = "constant_time_eq"
-version = "0.3.1"
+version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7c74b8349d32d297c9134b8c88677813a227df8f779daa29bfc29c183fe3dca6"
+checksum = "3d52eff69cd5e647efe296129160853a42795992097e8af39800e1060caeea9b"
 
 [[package]]
 name = "control-plane-api"
-version = "0.11.112"
-source = "git+https://github.com/nanvix/nanvix?rev=7752e9f2deb4a5606f9885e4c130eec4ea583de1#7752e9f2deb4a5606f9885e4c130eec4ea583de1"
+version = "0.11.74"
 dependencies = [
  "config",
  "num_enum",
@@ -519,30 +519,61 @@ dependencies = [
 ]
 
 [[package]]
+name = "embedded-io"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9eb1aa714776b75c7e67e1da744b81a129b3ff919c8712b5e1b32252c1f07cc7"
+
+[[package]]
 name = "equivalent"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "877a4ace8713b0bcf2a4e7eec82529c029f1d0619886d18145fea96c3ffe5c0f"
 
 [[package]]
+name = "errno"
+version = "0.3.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
+dependencies = [
+ "libc",
+ "windows-sys 0.61.2",
+]
+
+[[package]]
 name = "error"
-version = "0.11.112"
-source = "git+https://github.com/nanvix/nanvix?rev=7752e9f2deb4a5606f9885e4c130eec4ea583de1#7752e9f2deb4a5606f9885e4c130eec4ea583de1"
+version = "0.11.74"
 dependencies = [
  "sysapi",
 ]
 
 [[package]]
-name = "find-msvc-tools"
-version = "0.1.4"
+name = "fastrand"
+version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "52051878f80a721bb68ebfbc930e07b65ba72f2da88968ea5c06fd6ca3d3a127"
+checksum = "37909eebbb50d72f9059c3b6d82c0463f2ff062c9e95845c43a6c9c0355411be"
+
+[[package]]
+name = "fatfs"
+version = "0.4.0"
+source = "git+https://github.com/rafalh/rust-fatfs?rev=4eccb50d011146fbed20e133d33b22f3c27292e7#4eccb50d011146fbed20e133d33b22f3c27292e7"
+dependencies = [
+ "bitflags 2.10.0",
+ "chrono",
+ "log",
+]
+
+[[package]]
+name = "find-msvc-tools"
+version = "0.1.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5baebc0774151f905a1a2cc41989300b1e6fbb29aff0ceffa1064fdd3088d582"
 
 [[package]]
 name = "flatbuffers"
-version = "25.9.23"
+version = "25.12.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "09b6620799e7340ebd9968d2e0708eb82cf1971e9a16821e2091b6d6e475eed5"
+checksum = "35f6839d7b3b98adde531effaf34f0c2badc6f4735d26fe74709d8e513a96ef3"
 dependencies = [
  "bitflags 2.10.0",
  "rustc_version",
@@ -574,6 +605,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cb4cb245038516f5f85277875cdaa4f7d2c9a0fa0468de06ed190163b1581fcf"
 dependencies = [
  "percent-encoding",
+]
+
+[[package]]
+name = "fs2"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9564fc758e15025b46aa6643b1b77d047d1a56a1aea6e01002ac0c7026876213"
+dependencies = [
+ "libc",
+ "winapi",
 ]
 
 [[package]]
@@ -709,6 +750,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "glob"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0cc23270f6e1808e30a928bdc84dea0b9b4136a8bc82338574f23baf47bbd280"
+
+[[package]]
 name = "globset"
 version = "0.4.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -829,8 +876,7 @@ checksum = "df3b46402a9d5adb4c86a0cf463f42e19994e3ee891101b1841f30a545cb49a9"
 
 [[package]]
 name = "hwloc"
-version = "0.11.112"
-source = "git+https://github.com/nanvix/nanvix?rev=7752e9f2deb4a5606f9885e4c130eec4ea583de1#7752e9f2deb4a5606f9885e4c130eec4ea583de1"
+version = "0.11.74"
 dependencies = [
  "anyhow",
  "libc",
@@ -906,7 +952,6 @@ dependencies = [
 [[package]]
 name = "hyperlight-common"
 version = "0.12.0"
-source = "git+https://github.com/nanvix/hyperlight?branch=nanvix%2Fv0.12.0#6fa8363f88f0118970ead70d0256a1306bcf8ea3"
 dependencies = [
  "anyhow",
  "flatbuffers",
@@ -917,18 +962,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "hyperlight-guest"
+version = "0.12.0"
+dependencies = [
+ "anyhow",
+ "embedded-io",
+ "fatfs",
+ "flatbuffers",
+ "hyperlight-common",
+ "serde_json",
+ "tracing",
+]
+
+[[package]]
 name = "hyperlight-host"
 version = "0.12.0"
-source = "git+https://github.com/nanvix/hyperlight?branch=nanvix%2Fv0.12.0#6fa8363f88f0118970ead70d0256a1306bcf8ea3"
 dependencies = [
  "anyhow",
  "bitflags 2.10.0",
  "blake3",
  "cfg-if",
  "cfg_aliases",
+ "chrono",
+ "clap",
  "crossbeam-channel",
  "elfcore",
+ "fatfs",
  "flatbuffers",
+ "fs2",
+ "glob",
  "goblin",
  "hyperlight-common",
  "kvm-bindings",
@@ -942,10 +1004,13 @@ dependencies = [
  "page_size",
  "rand",
  "rust-embed",
+ "serde",
  "serde_json",
  "sha256",
+ "tempfile",
  "termcolor",
  "thiserror 2.0.17",
+ "toml",
  "tracing",
  "tracing-core",
  "tracing-log",
@@ -1219,9 +1284,9 @@ checksum = "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
 
 [[package]]
 name = "libc"
-version = "0.2.178"
+version = "0.2.180"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "37c93d8daa9d8a012fd8ab92f088405fb202ea0b6ab73ee2482ae66af4f42091"
+checksum = "bcc35a38544a891a5f7c865aca548a982ccb3b8650a5b06d0fd33a10283c56fc"
 
 [[package]]
 name = "libloading"
@@ -1244,9 +1309,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "linux-raw-sys"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "df1d3c3b53da64cf5760482273a98e575c651a67eec7f77df96b5b642de8f039"
+
+[[package]]
 name = "linuxd"
-version = "0.11.112"
-source = "git+https://github.com/nanvix/nanvix?rev=7752e9f2deb4a5606f9885e4c130eec4ea583de1#7752e9f2deb4a5606f9885e4c130eec4ea583de1"
+version = "0.11.74"
 dependencies = [
  "anyhow",
  "config",
@@ -1354,8 +1424,7 @@ dependencies = [
 
 [[package]]
 name = "nanvix"
-version = "0.11.112"
-source = "git+https://github.com/nanvix/nanvix?rev=7752e9f2deb4a5606f9885e4c130eec4ea583de1#7752e9f2deb4a5606f9885e4c130eec4ea583de1"
+version = "0.11.74"
 dependencies = [
  "anyhow",
  "config",
@@ -1373,8 +1442,7 @@ dependencies = [
 
 [[package]]
 name = "nanvix-http"
-version = "0.11.112"
-source = "git+https://github.com/nanvix/nanvix?rev=7752e9f2deb4a5606f9885e4c130eec4ea583de1#7752e9f2deb4a5606f9885e4c130eec4ea583de1"
+version = "0.11.74"
 dependencies = [
  "anyhow",
  "config",
@@ -1397,8 +1465,7 @@ dependencies = [
 
 [[package]]
 name = "nanvix-registry"
-version = "0.11.112"
-source = "git+https://github.com/nanvix/nanvix?rev=7752e9f2deb4a5606f9885e4c130eec4ea583de1#7752e9f2deb4a5606f9885e4c130eec4ea583de1"
+version = "0.11.74"
 dependencies = [
  "anyhow",
  "dirs",
@@ -1412,8 +1479,7 @@ dependencies = [
 
 [[package]]
 name = "nanvix-sandbox"
-version = "0.11.112"
-source = "git+https://github.com/nanvix/nanvix?rev=7752e9f2deb4a5606f9885e4c130eec4ea583de1#7752e9f2deb4a5606f9885e4c130eec4ea583de1"
+version = "0.11.74"
 dependencies = [
  "anyhow",
  "cfg-if",
@@ -1432,8 +1498,7 @@ dependencies = [
 
 [[package]]
 name = "nanvix-sandbox-cache"
-version = "0.11.112"
-source = "git+https://github.com/nanvix/nanvix?rev=7752e9f2deb4a5606f9885e4c130eec4ea583de1#7752e9f2deb4a5606f9885e4c130eec4ea583de1"
+version = "0.11.74"
 dependencies = [
  "anyhow",
  "config",
@@ -1445,8 +1510,7 @@ dependencies = [
 
 [[package]]
 name = "nanvix-terminal"
-version = "0.11.112"
-source = "git+https://github.com/nanvix/nanvix?rev=7752e9f2deb4a5606f9885e4c130eec4ea583de1#7752e9f2deb4a5606f9885e4c130eec4ea583de1"
+version = "0.11.74"
 dependencies = [
  "anyhow",
  "libc",
@@ -1687,8 +1751,7 @@ dependencies = [
 
 [[package]]
 name = "profiler"
-version = "0.11.112"
-source = "git+https://github.com/nanvix/nanvix?rev=7752e9f2deb4a5606f9885e4c130eec4ea583de1#7752e9f2deb4a5606f9885e4c130eec4ea583de1"
+version = "0.11.74"
 dependencies = [
  "cfg-if",
  "syslog",
@@ -2022,6 +2085,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "rustix"
+version = "1.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "146c9e247ccc180c1f61615433868c99f3de3ae256a30a43b49f67c2d9171f34"
+dependencies = [
+ "bitflags 2.10.0",
+ "errno",
+ "libc",
+ "linux-raw-sys",
+ "windows-sys 0.61.2",
+]
+
+[[package]]
 name = "rustls"
 version = "0.23.35"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2235,6 +2311,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde_spanned"
+version = "0.6.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bf41e0cfaf7226dca15e8197172c295a782857fcb97fad1808a166870dee75a3"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "sha2"
 version = "0.10.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2336,8 +2421,7 @@ checksum = "6ce2be8dc25455e1f91df71bfa12ad37d7af1092ae736f3a6cd0e37bc7810596"
 
 [[package]]
 name = "static_assert"
-version = "0.11.112"
-source = "git+https://github.com/nanvix/nanvix?rev=7752e9f2deb4a5606f9885e4c130eec4ea583de1#7752e9f2deb4a5606f9885e4c130eec4ea583de1"
+version = "0.11.74"
 
 [[package]]
 name = "strsim"
@@ -2384,8 +2468,7 @@ dependencies = [
 
 [[package]]
 name = "sys"
-version = "0.11.112"
-source = "git+https://github.com/nanvix/nanvix?rev=7752e9f2deb4a5606f9885e4c130eec4ea583de1#7752e9f2deb4a5606f9885e4c130eec4ea583de1"
+version = "0.11.74"
 dependencies = [
  "config",
  "error",
@@ -2394,8 +2477,7 @@ dependencies = [
 
 [[package]]
 name = "sysapi"
-version = "0.11.112"
-source = "git+https://github.com/nanvix/nanvix?rev=7752e9f2deb4a5606f9885e4c130eec4ea583de1#7752e9f2deb4a5606f9885e4c130eec4ea583de1"
+version = "0.11.74"
 dependencies = [
  "config",
  "static_assert",
@@ -2403,12 +2485,12 @@ dependencies = [
 
 [[package]]
 name = "syscall"
-version = "0.11.112"
-source = "git+https://github.com/nanvix/nanvix?rev=7752e9f2deb4a5606f9885e4c130eec4ea583de1#7752e9f2deb4a5606f9885e4c130eec4ea583de1"
+version = "0.11.74"
 dependencies = [
  "arch",
  "cfg-if",
  "config",
+ "hyperlight-guest",
  "spin 0.10.0 (git+https://github.com/nanvix/spin-rs?branch=nanvix%2Fv0.10.0)",
  "static_assert",
  "sys",
@@ -2418,8 +2500,7 @@ dependencies = [
 
 [[package]]
 name = "syscomm"
-version = "0.11.112"
-source = "git+https://github.com/nanvix/nanvix?rev=7752e9f2deb4a5606f9885e4c130eec4ea583de1#7752e9f2deb4a5606f9885e4c130eec4ea583de1"
+version = "0.11.74"
 dependencies = [
  "config",
  "libc",
@@ -2430,22 +2511,10 @@ dependencies = [
 
 [[package]]
 name = "syslog"
-version = "0.11.112"
-source = "git+https://github.com/nanvix/nanvix?rev=7752e9f2deb4a5606f9885e4c130eec4ea583de1#7752e9f2deb4a5606f9885e4c130eec4ea583de1"
+version = "0.11.74"
 dependencies = [
  "flexi_logger",
  "log",
- "syslog-macros",
-]
-
-[[package]]
-name = "syslog-macros"
-version = "0.11.112"
-source = "git+https://github.com/nanvix/nanvix?rev=7752e9f2deb4a5606f9885e4c130eec4ea583de1#7752e9f2deb4a5606f9885e4c130eec4ea583de1"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
 ]
 
 [[package]]
@@ -2474,6 +2543,19 @@ name = "target-lexicon"
 version = "0.12.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "61c41af27dd6d1e27b1b16b489db798443478cef1f06a660c96db617ba5de3b1"
+
+[[package]]
+name = "tempfile"
+version = "3.24.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "655da9c7eb6305c55742045d5a8d2037996d61d8de95806335c7c86ce0f82e9c"
+dependencies = [
+ "fastrand",
+ "getrandom 0.3.4",
+ "once_cell",
+ "rustix",
+ "windows-sys 0.61.2",
+]
 
 [[package]]
 name = "termcolor"
@@ -2601,6 +2683,47 @@ dependencies = [
 ]
 
 [[package]]
+name = "toml"
+version = "0.8.23"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dc1beb996b9d83529a9e75c17a1686767d148d70663143c7854d8b4a09ced362"
+dependencies = [
+ "serde",
+ "serde_spanned",
+ "toml_datetime",
+ "toml_edit",
+]
+
+[[package]]
+name = "toml_datetime"
+version = "0.6.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "22cddaf88f4fbc13c51aebbf5f8eceb5c7c5a9da2ac40a13519eb5b0a0e8f11c"
+dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "toml_edit"
+version = "0.22.27"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "41fe8c660ae4257887cf66394862d21dbca4a6ddd26f04a3560410406a2f819a"
+dependencies = [
+ "indexmap",
+ "serde",
+ "serde_spanned",
+ "toml_datetime",
+ "toml_write",
+ "winnow",
+]
+
+[[package]]
+name = "toml_write"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5d99f8c9a7727884afe522e9bd5edbfc91a3312b36a77b5fb8926e4c31a41801"
+
+[[package]]
 name = "tower"
 version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2697,8 +2820,7 @@ checksum = "e421abadd41a4225275504ea4d6566923418b7f05506fbc9c0fe86ba7396114b"
 
 [[package]]
 name = "type-safe"
-version = "0.11.112"
-source = "git+https://github.com/nanvix/nanvix?rev=7752e9f2deb4a5606f9885e4c130eec4ea583de1#7752e9f2deb4a5606f9885e4c130eec4ea583de1"
+version = "0.11.74"
 
 [[package]]
 name = "typenum"
@@ -2744,8 +2866,7 @@ dependencies = [
 
 [[package]]
 name = "user-vm-api"
-version = "0.11.112"
-source = "git+https://github.com/nanvix/nanvix?rev=7752e9f2deb4a5606f9885e4c130eec4ea583de1#7752e9f2deb4a5606f9885e4c130eec4ea583de1"
+version = "0.11.74"
 dependencies = [
  "config",
  "serde",
@@ -2756,8 +2877,7 @@ dependencies = [
 
 [[package]]
 name = "uservm"
-version = "0.11.112"
-source = "git+https://github.com/nanvix/nanvix?rev=7752e9f2deb4a5606f9885e4c130eec4ea583de1#7752e9f2deb4a5606f9885e4c130eec4ea583de1"
+version = "0.11.74"
 dependencies = [
  "anyhow",
  "arch",
@@ -3353,6 +3473,15 @@ name = "windows_x86_64_msvc"
 version = "0.53.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d6bbff5f0aada427a1e5a6da5f1f98158182f26556f345ac9e04d36d0ebed650"
+
+[[package]]
+name = "winnow"
+version = "0.7.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5a5364e9d77fcdeeaa6062ced926ee3381faa2ee02d3eb83a5c27a8825540829"
+dependencies = [
+ "memchr",
+]
 
 [[package]]
 name = "wit-bindgen"

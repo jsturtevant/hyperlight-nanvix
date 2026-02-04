@@ -68,6 +68,8 @@ pub struct RuntimeConfig {
     pub log_directory: String,
     /// Directory for temporary files
     pub tmp_directory: String,
+    /// Optional local nanvix directory (overrides registry downloads)
+    pub nanvix_registry: Option<String>,
 }
 
 impl std::fmt::Debug for RuntimeConfig {
@@ -79,6 +81,7 @@ impl std::fmt::Debug for RuntimeConfig {
             )
             .field("log_directory", &self.log_directory)
             .field("tmp_directory", &self.tmp_directory)
+            .field("nanvix_registry", &self.nanvix_registry)
             .finish()
     }
 }
@@ -101,6 +104,7 @@ impl Default for RuntimeConfig {
             syscall_table: None,
             log_directory: format!("/tmp/hyperlight-nanvix-{}", unique_suffix),
             tmp_directory: format!("/tmp/hyperlight-nanvix-{}", unique_suffix),
+            nanvix_registry: None,
         }
     }
 }
@@ -125,6 +129,11 @@ impl RuntimeConfig {
 
     pub fn with_tmp_directory<S: Into<String>>(mut self, dir: S) -> Self {
         self.tmp_directory = dir.into();
+        self
+    }
+
+    pub fn with_nanvix_registry<S: Into<String>>(mut self, dir: S) -> Self {
+        self.nanvix_registry = Some(dir.into());
         self
     }
 }
@@ -171,10 +180,12 @@ impl Runtime {
         let binary_path = if matches!(workload_type, WorkloadType::Binary) {
             // For binary workloads, we don't need an interpreter
             String::new()
-        } else if let Some(cached_path) = self
-            .get_cached_binary_path(workload_type.binary_name())
-            .await
-        {
+        } else if let Some(ref registry_dir) = self.config.nanvix_registry {
+            // Use local nanvix directory
+            let path = format!("{}/sysroot-debug/bin/{}", registry_dir, workload_type.binary_name());
+            log::info!("Using local {} binary: {}", workload_type.binary_name(), path);
+            path
+        } else if let Some(cached_path) = self.get_cached_binary_path(workload_type.binary_name()).await {
             log::info!(
                 "Using cached {} binary: {}",
                 workload_type.binary_name(),
@@ -192,8 +203,12 @@ impl Runtime {
         };
 
         // Get kernel path for terminal configuration
-        let kernel_path = if let Some(cached_path) = self.get_cached_binary_path("kernel.elf").await
-        {
+        let kernel_path = if let Some(ref registry_dir) = self.config.nanvix_registry {
+            // Use local nanvix directory
+            let path = format!("{}/sysroot-debug/bin/kernel.elf", registry_dir);
+            log::info!("Using local kernel binary: {}", path);
+            path
+        } else if let Some(cached_path) = self.get_cached_binary_path("kernel.elf").await {
             log::info!("Using cached kernel binary: {}", cached_path);
             cached_path
         } else {
@@ -260,14 +275,26 @@ impl Runtime {
         let toolchain_path = format!("{}/toolchain", &self.config.tmp_directory);
         let snapshot_path = format!("{}/snapshot.bin", &self.config.tmp_directory);
 
+        let (script_args, script_name) = self.prepare_script_args(workload_type, Path::new(&absolute_workload_path))?;
+
+        // Build FAT image path if using local registry (mount at /lib, FAT contains /python3.12)
+        let (fat_images, ramfs) = if let Some(ref registry_dir) = self.config.nanvix_registry {
+            (vec![(format!("{}/lib/fat/python3.12.fat", registry_dir), "/lib".to_string())], Some(format!("{}", absolute_workload_path)))
+        } else {
+            (vec![], None)
+        };
+
+        // Use ramfs for the script file (works when FAT is not mounted at root)
         let sandbox_cache_config = SandboxCacheConfig::new(
             nanvix::syscomm::SocketType::Unix,
             nanvix::syscomm::SocketType::Unix,
             nanvix::syscomm::SocketType::Unix,
             console_file,
             None,
-            None,
-            0,
+            ramfs,              // ramfs_filename
+            vec![],            // mounts - empty, using ramfs
+            fat_images,        // fat images
+            0,                 // netns_pool_size
             &kernel_path,
             syscall_table,
             &toolchain_path,
@@ -281,10 +308,8 @@ impl Runtime {
         let mut terminal: Terminal<()> = Terminal::new(sandbox_cache_config);
 
         // Prepare execution paths and metadata
-        let (script_args, script_name) =
-            self.prepare_script_args(workload_type, Path::new(&absolute_workload_path))?;
         let effective_binary_path = match workload_type {
-            WorkloadType::Python => "bin/python3".to_string(),
+            WorkloadType::Python => binary_path.clone(), // Host path to python3 binary
             WorkloadType::Binary => absolute_workload_path.clone(),
             _ => binary_path.clone(),
         };
@@ -344,7 +369,10 @@ impl Runtime {
                 args
             }
             WorkloadType::Python => {
-                format!("-S -I {}", workload_path.to_string_lossy())
+                // TOODO make this configurable
+                // Derive guest path for the workload (ramfs mounts files at /{filename})
+                let guest_script_path = format!("/{}", script_name);
+                format!("-S -I {}", guest_script_path)
             }
             WorkloadType::Binary => {
                 // Binary files are executed directly, no script args needed

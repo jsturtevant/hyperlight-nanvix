@@ -5,10 +5,7 @@ edition = "2021"
 description = "A Hyperlight VMM wrapper with out-of-the-box support for running Nanvix microkernel guests"
 
 [dependencies]
-nanvix = { git = "https://github.com/nanvix/nanvix", rev = "7752e9f2deb4a5606f9885e4c130eec4ea583de1", features = [
-    "single-process",
-    "hyperlight",
-] }
+nanvix = { path = "../nanvix/src/libs/nanvix", features = ["single-process", "hyperlight"] }
 tokio = { version = "1.0", features = ["rt-multi-thread", "macros"] }
 anyhow = "1.0"
 clap = { version = "4", features = ["derive"] }

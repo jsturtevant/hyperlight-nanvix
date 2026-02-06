@@ -20,16 +20,30 @@ pub struct SandboxConfig {
     pub log_directory: Option<String>,
     #[pyo3(get, set)]
     pub tmp_directory: Option<String>,
+    #[pyo3(get, set)]
+    /// Path to local nanvix directory (overrides registry downloads)
+    pub nanvix_registry: Option<String>,
+    #[pyo3(get, set)]
+    /// File mounts: list of (host_path, guest_path) tuples
+    /// Nanvix copies these files into the FAT filesystem automatically
+    pub file_mounts: Option<Vec<(String, String)>>,
 }
 
 #[pymethods]
 impl SandboxConfig {
     #[new]
-    #[pyo3(signature = (log_directory=None, tmp_directory=None))]
-    fn new(log_directory: Option<String>, tmp_directory: Option<String>) -> Self {
+    #[pyo3(signature = (log_directory=None, tmp_directory=None, nanvix_registry=None, file_mounts=None))]
+    fn new(
+        log_directory: Option<String>,
+        tmp_directory: Option<String>,
+        nanvix_registry: Option<String>,
+        file_mounts: Option<Vec<(String, String)>>,
+    ) -> Self {
         Self {
             log_directory,
             tmp_directory,
+            nanvix_registry,
+            file_mounts,
         }
     }
 }
@@ -41,6 +55,10 @@ pub struct WorkloadResult {
     #[pyo3(get)]
     pub success: bool,
     #[pyo3(get)]
+    pub stdout: String,
+    #[pyo3(get)]
+    pub stderr: String,
+    #[pyo3(get)]
     pub error: Option<String>,
 }
 
@@ -49,7 +67,7 @@ impl WorkloadResult {
     fn __repr__(&self) -> String {
         match &self.error {
             Some(err) => format!("WorkloadResult(success={}, error='{}')", self.success, err),
-            None => format!("WorkloadResult(success={})", self.success),
+            None => format!("WorkloadResult(success={}, stdout_len={})", self.success, self.stdout.len()),
         }
     }
 }
@@ -79,6 +97,14 @@ impl NanvixSandbox {
                 }
                 if let Some(tmp_dir) = cfg.tmp_directory {
                     runtime_config = runtime_config.with_tmp_directory(tmp_dir);
+                }
+                // Apply nanvix registry
+                if let Some(registry) = cfg.nanvix_registry {
+                    runtime_config = runtime_config.with_nanvix_registry(registry);
+                }
+                // Apply file mounts
+                if let Some(mounts) = cfg.file_mounts {
+                    runtime_config = runtime_config.with_file_mounts(mounts);
                 }
                 runtime_config
             }
@@ -112,10 +138,14 @@ impl NanvixSandbox {
             match runtime.run(&workload_path).await {
                 Ok(()) => Ok(WorkloadResult {
                     success: true,
+                    stdout: String::new(),
+                    stderr: String::new(),
                     error: None,
                 }),
                 Err(e) => Ok(WorkloadResult {
                     success: false,
+                    stdout: String::new(),
+                    stderr: String::new(),
                     error: Some(format!("Workload execution failed: {}", e)),
                 }),
             }

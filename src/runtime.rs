@@ -70,6 +70,8 @@ pub struct RuntimeConfig {
     pub tmp_directory: String,
     /// Optional local nanvix directory (overrides registry downloads)
     pub nanvix_registry: Option<String>,
+    /// File mounts: (host_path, guest_path) pairs - Nanvix copies into FAT automatically
+    pub file_mounts: Vec<(String, String)>,
 }
 
 impl std::fmt::Debug for RuntimeConfig {
@@ -82,6 +84,7 @@ impl std::fmt::Debug for RuntimeConfig {
             .field("log_directory", &self.log_directory)
             .field("tmp_directory", &self.tmp_directory)
             .field("nanvix_registry", &self.nanvix_registry)
+            .field("file_mounts", &self.file_mounts)
             .finish()
     }
 }
@@ -105,6 +108,7 @@ impl Default for RuntimeConfig {
             log_directory: format!("/tmp/hyperlight-nanvix-{}", unique_suffix),
             tmp_directory: format!("/tmp/hyperlight-nanvix-{}", unique_suffix),
             nanvix_registry: None,
+            file_mounts: vec![],
         }
     }
 }
@@ -133,7 +137,33 @@ impl RuntimeConfig {
     }
 
     pub fn with_nanvix_registry<S: Into<String>>(mut self, dir: S) -> Self {
-        self.nanvix_registry = Some(dir.into());
+        let path = dir.into();
+        let canonical = std::path::Path::new(&path)
+            .canonicalize()
+            .unwrap_or_else(|_| std::path::PathBuf::from(&path));
+        self.nanvix_registry = Some(canonical.to_string_lossy().to_string());
+        self
+    }
+
+    /// Mount a file into the guest filesystem.
+    /// Nanvix handles copying the file into the FAT - no temp files needed.
+    ///
+    /// # Parameters
+    ///
+    /// - `host_path`: Absolute path to file on host
+    /// - `guest_path`: Path in guest filesystem (e.g., "/tmp/input.csv")
+    pub fn with_file_mount<S1: Into<String>, S2: Into<String>>(
+        mut self,
+        host_path: S1,
+        guest_path: S2,
+    ) -> Self {
+        self.file_mounts.push((host_path.into(), guest_path.into()));
+        self
+    }
+
+    /// Mount multiple files into the guest filesystem.
+    pub fn with_file_mounts(mut self, mounts: Vec<(String, String)>) -> Self {
+        self.file_mounts.extend(mounts);
         self
     }
 }
@@ -182,7 +212,7 @@ impl Runtime {
             String::new()
         } else if let Some(ref registry_dir) = self.config.nanvix_registry {
             // Use local nanvix directory
-            let path = format!("{}/sysroot-debug/bin/{}", registry_dir, workload_type.binary_name());
+            let path = format!("{}/bin/{}", registry_dir, workload_type.binary_name());
             log::info!("Using local {} binary: {}", workload_type.binary_name(), path);
             path
         } else if let Some(cached_path) = self.get_cached_binary_path(workload_type.binary_name()).await {
@@ -205,7 +235,7 @@ impl Runtime {
         // Get kernel path for terminal configuration
         let kernel_path = if let Some(ref registry_dir) = self.config.nanvix_registry {
             // Use local nanvix directory
-            let path = format!("{}/sysroot-debug/bin/kernel.elf", registry_dir);
+            let path = format!("{}/bin/kernel.elf", registry_dir);
             log::info!("Using local kernel binary: {}", path);
             path
         } else if let Some(cached_path) = self.get_cached_binary_path("kernel.elf").await {
@@ -279,12 +309,13 @@ impl Runtime {
 
         // Build FAT image path if using local registry (mount at /lib, FAT contains /python3.12)
         let (fat_images, ramfs) = if let Some(ref registry_dir) = self.config.nanvix_registry {
-            (vec![(format!("{}/lib/fat/python3.12.fat", registry_dir), "/lib".to_string())], Some(format!("{}", absolute_workload_path)))
+            (vec![(format!("{}/lib/python3.12.fat", registry_dir), "/lib".to_string())], Some(format!("{}", absolute_workload_path)))
         } else {
             (vec![], None)
         };
 
         // Use ramfs for the script file (works when FAT is not mounted at root)
+        // Pass custom file mounts from config - Nanvix copies to FAT automatically
         let sandbox_cache_config = SandboxCacheConfig::new(
             nanvix::syscomm::SocketType::Unix,
             nanvix::syscomm::SocketType::Unix,
@@ -292,7 +323,7 @@ impl Runtime {
             console_file,
             None,
             ramfs,              // ramfs_filename
-            vec![],            // mounts - empty, using ramfs
+            self.config.file_mounts.clone(), // mounts - custom file mounts
             fat_images,        // fat images
             0,                 // netns_pool_size
             &kernel_path,

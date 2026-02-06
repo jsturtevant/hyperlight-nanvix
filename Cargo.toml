@@ -39,5 +39,9 @@ crate-type = ["cdylib", "rlib"]
 name = "syscall_interception"
 path = "examples/syscall_interception.rs"
 
+[[example]]
+name = "csv_processor"
+path = "examples/csv_processor.rs"
+
 [build-dependencies]
 napi-build = { version = "2.3.0", optional = true }

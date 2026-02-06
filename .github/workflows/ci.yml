@@ -58,10 +58,13 @@ jobs:
         run: cargo run --release -- guest-examples/hello.js
 
       - name: Run CLI with Python
-        run: cargo run --release -- guest-examples/hello.py
+        run: cargo run --release -- --nanvix-registry ./dist guest-examples/hello.py
 
       - name: Run syscall_interception example
         run: cargo run --release --example syscall_interception
+
+      - name: Build csv_processor example
+        run: cargo run --release --example csv_processor
 
   node:
     name: Node.js Build
@@ -151,5 +154,8 @@ jobs:
       - name: Setup registry
         run: cargo run --release -- setup-registry
 
-      - name: Run Python example
+      - name: Run Python SDK example (JS guest)
         run: .venv/bin/python examples/python_sdk_example.py
+
+      - name: Check csv_processor_py example syntax
+        run: .venv/bin/python examples/csv_processor_py.py

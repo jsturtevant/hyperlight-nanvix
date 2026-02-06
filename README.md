@@ -126,6 +126,27 @@ async fn main() -> anyhow::Result<()> {
 }
 ```
 
+#### File Mounts
+
+Mount host files into the guest VM:
+
+```rust
+use hyperlight_nanvix::{Sandbox, RuntimeConfig};
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let config = RuntimeConfig::new()
+        .with_nanvix_registry("/path/to/nanvix")
+        .with_file_mount("/host/input.csv", "/tmp/test.csv");
+
+    let mut sandbox = Sandbox::new(config)?;
+    sandbox.run("guest-examples/csv_processor.py").await?;
+    Ok(())
+}
+```
+
+See `examples/csv_processor.rs` for a complete example.
+
 ### Node.js
 
 Basic usage with the library:
@@ -163,6 +184,30 @@ async def main():
 
 asyncio.run(main())
 ```
+
+#### File Mounts (Python)
+
+```python
+import asyncio
+from hyperlight_nanvix import NanvixSandbox, SandboxConfig
+
+async def main():
+    config = SandboxConfig(
+        nanvix_registry="/path/to/nanvix",
+        file_mounts=[
+            ("/host/input.csv", "/tmp/test.csv")  # (host_path, guest_path)
+        ]
+    )
+    sandbox = NanvixSandbox(config)
+    
+    result = await sandbox.run('guest-examples/csv_processor.py')
+    if result.success:
+        print('Processing complete')
+
+asyncio.run(main())
+```
+
+See `examples/csv_processor_py.py` for a complete example.
 
 To embed in your own project:
 
@@ -208,6 +253,21 @@ Check `guest-examples/` for sample programs:
 - `hello-c.c` - C program with basic operations
 - `hello-cpp.cpp` - C++ program with classes and STL
 - `file_ops.js` - JavaScript demonstrating file operations
+- `csv_processor.py` - Python CSV processing with file mounts
+
+### Running Examples
+
+```bash
+# Basic examples
+cargo run --example syscall_interception
+
+# CSV processor with file mounts
+cargo run --example csv_processor
+
+# Python SDK example
+maturin develop --features python
+python examples/csv_processor_py.py
+```
 
 ## Syscall Interception
 

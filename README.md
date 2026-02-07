@@ -147,6 +147,43 @@ async fn main() -> anyhow::Result<()> {
 
 See `examples/csv_processor.rs` for a complete example.
 
+#### Python Packages
+
+Install third-party pure-Python packages from PyPI and use them in the guest VM:
+
+```bash
+# Install packages (one-time)
+cargo run -- build-packages markdown requests
+
+# List installed packages
+cargo run -- list-packages
+```
+
+Then reference them in your runtime config:
+
+```rust
+use hyperlight_nanvix::{Sandbox, RuntimeConfig};
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let config = RuntimeConfig::new()
+        .with_nanvix_registry("./dist")
+        .with_python_package("markdown");
+
+    let mut sandbox = Sandbox::new(config)?;
+    sandbox.run("guest-examples/hello-markdown.py").await?;
+    Ok(())
+}
+```
+
+Packages are downloaded as wheels, extracted, pre-compiled to `.pyc`, and stored
+as individual FAT images in the registry (`lib/pkg-<name>.fat`).
+
+> **Requirements:** `pip`, `dosfstools`, `mtools`, and `unzip` must be installed.
+> On Ubuntu: `sudo apt-get install dosfstools mtools`
+
+See `examples/markdown_renderer.rs` for a complete example.
+
 ### Node.js
 
 Basic usage with the library:
@@ -254,6 +291,7 @@ Check `guest-examples/` for sample programs:
 - `hello-cpp.cpp` - C++ program with classes and STL
 - `file_ops.js` - JavaScript demonstrating file operations
 - `csv_processor.py` - Python CSV processing with file mounts
+- `hello-markdown.py` - Python markdown-to-HTML rendering (requires `build-packages markdown`)
 
 ### Running Examples
 
@@ -263,6 +301,10 @@ cargo run --example syscall_interception
 
 # CSV processor with file mounts
 cargo run --example csv_processor
+
+# Markdown renderer (install package first)
+cargo run -- build-packages markdown
+cargo run --example markdown_renderer
 
 # Python SDK example
 maturin develop --features python

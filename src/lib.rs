@@ -2,6 +2,7 @@ use anyhow::Result;
 use std::path::Path;
 
 pub mod cache;
+pub mod packages;
 pub mod runtime;
 
 #[cfg(feature = "napi")]

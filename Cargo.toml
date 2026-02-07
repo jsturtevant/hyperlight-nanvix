@@ -43,5 +43,9 @@ path = "examples/syscall_interception.rs"
 name = "csv_processor"
 path = "examples/csv_processor.rs"
 
+[[example]]
+name = "markdown_renderer"
+path = "examples/markdown_renderer.rs"
+
 [build-dependencies]
 napi-build = { version = "2.3.0", optional = true }

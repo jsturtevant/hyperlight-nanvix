@@ -72,6 +72,10 @@ pub struct RuntimeConfig {
     pub nanvix_registry: Option<String>,
     /// File mounts: (host_path, guest_path) pairs - Nanvix copies into FAT automatically
     pub file_mounts: Vec<(String, String)>,
+    /// Extra FAT images: (host_fat_path, guest_mount_point) pairs
+    pub fat_images: Vec<(String, String)>,
+    /// Python packages to load (looked up as pkg-<name>.fat in the registry)
+    pub python_packages: Vec<String>,
 }
 
 impl std::fmt::Debug for RuntimeConfig {
@@ -85,6 +89,8 @@ impl std::fmt::Debug for RuntimeConfig {
             .field("tmp_directory", &self.tmp_directory)
             .field("nanvix_registry", &self.nanvix_registry)
             .field("file_mounts", &self.file_mounts)
+            .field("fat_images", &self.fat_images)
+            .field("python_packages", &self.python_packages)
             .finish()
     }
 }
@@ -109,6 +115,8 @@ impl Default for RuntimeConfig {
             tmp_directory: format!("/tmp/hyperlight-nanvix-{}", unique_suffix),
             nanvix_registry: None,
             file_mounts: vec![],
+            fat_images: vec![],
+            python_packages: vec![],
         }
     }
 }
@@ -164,6 +172,31 @@ impl RuntimeConfig {
     /// Mount multiple files into the guest filesystem.
     pub fn with_file_mounts(mut self, mounts: Vec<(String, String)>) -> Self {
         self.file_mounts.extend(mounts);
+        self
+    }
+
+    /// Add an extra FAT image to mount in the guest.
+    ///
+    /// # Parameters
+    ///
+    /// - `host_fat_path`: Absolute path to .fat file on host
+    /// - `guest_mount_point`: Mount point in guest filesystem (e.g., "/root")
+    pub fn with_fat_image<S1: Into<String>, S2: Into<String>>(
+        mut self,
+        host_fat_path: S1,
+        guest_mount_point: S2,
+    ) -> Self {
+        self.fat_images.push((host_fat_path.into(), guest_mount_point.into()));
+        self
+    }
+
+    /// Add a Python package by name.
+    ///
+    /// The package must have been previously installed with `build-packages`.
+    /// At runtime, the FAT image `lib/pkg-<name>.fat` is looked up in the
+    /// nanvix registry and mounted at `/root`.
+    pub fn with_python_package<S: Into<String>>(mut self, package_name: S) -> Self {
+        self.python_packages.push(package_name.into());
         self
     }
 }
@@ -309,9 +342,31 @@ impl Runtime {
 
         // Build FAT image path if using local registry (mount at /lib, FAT contains /python3.12)
         let (fat_images, ramfs) = if let Some(ref registry_dir) = self.config.nanvix_registry {
-            (vec![(format!("{}/lib/python3.12.fat", registry_dir), "/lib".to_string())], Some(format!("{}", absolute_workload_path)))
+            let mut images = vec![(format!("{}/lib/python3.12.fat", registry_dir), "/lib".to_string())];
+            // Append any extra FAT images from config
+            images.extend(self.config.fat_images.clone());
+            // Resolve python packages to FAT paths
+            for pkg_name in &self.config.python_packages {
+                let fat = crate::packages::package_fat_path(
+                    std::path::Path::new(registry_dir),
+                    pkg_name,
+                );
+                if !fat.exists() {
+                    anyhow::bail!(
+                        "Package '{}' not found at {}. Run: cargo run -- build-packages {}",
+                        pkg_name,
+                        fat.display(),
+                        pkg_name
+                    );
+                }
+                images.push((
+                    fat.to_string_lossy().to_string(),
+                    crate::packages::PACKAGE_MOUNT_POINT.to_string(),
+                ));
+            }
+            (images, Some(format!("{}", absolute_workload_path)))
         } else {
-            (vec![], None)
+            (self.config.fat_images.clone(), None)
         };
 
         // Use ramfs for the script file (works when FAT is not mounted at root)
@@ -403,7 +458,7 @@ impl Runtime {
                 // TOODO make this configurable
                 // Derive guest path for the workload (ramfs mounts files at /{filename})
                 let guest_script_path = format!("/{}", script_name);
-                format!("-S -I {}", guest_script_path)
+                format!("-B {}", guest_script_path)
             }
             WorkloadType::Binary => {
                 // Binary files are executed directly, no script args needed

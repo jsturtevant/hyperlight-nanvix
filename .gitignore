@@ -26,3 +26,5 @@ guest-examples/hello-c
 guest-examples/hello-cpp
 guest-examples/*.elf
 .vscode/settings.json
+dist/lib/pkg-markdown.fat
+dist/lib/pkg-pygments.fat

@@ -66,6 +66,15 @@ jobs:
       - name: Build csv_processor example
         run: cargo run --release --example csv_processor
 
+      - name: Install FAT tools
+        run: sudo apt-get update && sudo apt-get install -y dosfstools mtools
+
+      - name: Build markdown package
+        run: cargo run --release -- --nanvix-registry ./dist build-packages markdown
+
+      - name: Run markdown_renderer example
+        run: cargo run --release --example markdown_renderer
+
   node:
     name: Node.js Build
     runs-on: ubuntu-latest

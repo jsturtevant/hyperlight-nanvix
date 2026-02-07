@@ -1,6 +1,6 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use hyperlight_nanvix::{cache, RuntimeConfig, Sandbox};
+use hyperlight_nanvix::{cache, packages, RuntimeConfig, Sandbox};
 use nanvix::log;
 use nanvix::registry::Registry;
 use std::path::PathBuf;
@@ -35,6 +35,18 @@ enum Commands {
     SetupRegistry,
     /// Clear the nanvix registry cache
     ClearRegistry,
+    /// Download and build FAT images for Python packages from PyPI
+    BuildPackages {
+        /// Package names to install (e.g. markdown requests)
+        #[arg(required = true, num_args = 1..)]
+        packages: Vec<String>,
+
+        /// Force rebuild even if package FAT already exists
+        #[arg(long)]
+        force: bool,
+    },
+    /// List installed Python packages
+    ListPackages,
 }
 
 /// Default log-level (overridden by RUST_LOG environment variable if set).
@@ -114,6 +126,88 @@ async fn clear_registry_command() -> Result<()> {
     Ok(())
 }
 
+fn resolve_registry(cli_override: &Option<String>) -> PathBuf {
+    if let Some(ref path) = cli_override {
+        PathBuf::from(path)
+    } else {
+        // Default to the same path as the nanvix registry cache
+        cache::get_cache_directory()
+    }
+}
+
+fn build_packages_command(
+    registry_override: &Option<String>,
+    package_names: &[String],
+    force: bool,
+) -> Result<()> {
+    let registry = resolve_registry(registry_override);
+
+    println!(
+        "Building {} package(s) into registry: {}",
+        package_names.len(),
+        registry.display()
+    );
+    println!();
+
+    let mut failures = Vec::new();
+
+    for name in package_names {
+        println!("[{}]", name);
+        match packages::build_package(&registry, name, force) {
+            Ok(fat_path) => {
+                println!(
+                    "  OK: {}",
+                    fat_path.file_name().unwrap().to_string_lossy()
+                );
+            }
+            Err(e) => {
+                eprintln!("  FAILED: {}", e);
+                failures.push(name.clone());
+            }
+        }
+        println!();
+    }
+
+    if failures.is_empty() {
+        println!("All packages installed successfully.");
+        println!();
+        println!("Use in your code:");
+        println!(
+            "  let config = RuntimeConfig::new()\n      .with_nanvix_registry(\"{}\")",
+            registry.display()
+        );
+        for name in package_names {
+            println!("      .with_python_package(\"{}\")", name);
+        }
+        println!("      ;");
+    } else {
+        eprintln!("Failed packages: {}", failures.join(", "));
+        std::process::exit(1);
+    }
+
+    Ok(())
+}
+
+fn list_packages_command(registry_override: &Option<String>) -> Result<()> {
+    let registry = resolve_registry(registry_override);
+    let installed = packages::list_installed_packages(&registry);
+
+    if installed.is_empty() {
+        println!("No packages installed in {}", registry.display());
+        println!("Install with: cargo run -- build-packages <package-name>");
+    } else {
+        println!("Installed packages in {}:", registry.display());
+        for pkg in &installed {
+            let fat = packages::package_fat_path(&registry, pkg);
+            let size = std::fs::metadata(&fat)
+                .map(|m| format!("{:.1}MB", m.len() as f64 / (1024.0 * 1024.0)))
+                .unwrap_or_else(|_| "?".to_string());
+            println!("  {} ({})", pkg, size);
+        }
+    }
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
@@ -123,6 +217,10 @@ async fn main() -> Result<()> {
         return match command {
             Commands::SetupRegistry => setup_registry_command().await,
             Commands::ClearRegistry => clear_registry_command().await,
+            Commands::BuildPackages { packages: pkgs, force } => {
+                build_packages_command(&cli.nanvix_registry, &pkgs, force)
+            }
+            Commands::ListPackages => list_packages_command(&cli.nanvix_registry),
         };
     }
 

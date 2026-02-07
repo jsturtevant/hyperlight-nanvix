@@ -26,5 +26,9 @@ guest-examples/hello-c
 guest-examples/hello-cpp
 guest-examples/*.elf
 .vscode/settings.json
-dist/lib/pkg-markdown.fat
-dist/lib/pkg-pygments.fat
+
+# Large binary dist files (use copy-nanvix.sh to regenerate)
+dist/bin/kernel.elf
+dist/bin/python3
+dist/bin/python3.12
+dist/lib/*.fat
